@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>환경 영화 검색 추천</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #fff;
+            color: #000;
+            font-family: 'Helvetica', Arial, sans-serif;
+        }
+        header {
+            text-align: center;
+            padding: 40px;
+            border-bottom: 1px solid #000;
+        }
+        h1 {
+            margin: 0;
+            font-size: 36px;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+        .search-box {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+            gap: 10px;
+        }
+        input {
+            width: 300px;
+            padding: 12px;
+            border: 1px solid #000;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        .keywords {
+            margin-top: 25px;
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .keyword-btn {
+            padding: 8px 14px;
+            border: 1px solid #000;
+            background: #fff;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: 0.2s;
+            font-size: 14px;
+        }
+        .keyword-btn:hover {
+            background: #000;
+            color: #fff;
+        }
+        .movie-container {
+            width: 85%;
+            max-width: 900px;
+            margin: 40px auto;
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+        }
+        .movie {
+            border: 1px solid #000;
+            padding: 20px;
+            border-radius: 8px;
+            transition: 0.2s;
+        }
+        .movie:hover {
+            background: #f2f2f2;
+        }
+        .title {
+            font-size: 22px;
+            font-weight: bold;
+        }
+        .year {
+            color: #666;
+            font-size: 14px;
+        }
+        .desc {
+            margin-top: 10px;
+            font-size: 15px;
+            line-height: 1.6;
+        }
+        .no-result {
+            text-align: center;
+            font-size: 18px;
+            color: #444;
+            margin-top: 50px;
+        }
+    </style>
+</head>
+
+<body>
+
+<header>
+    <h1>환경 영화 검색 추천</h1>
+
+    <!-- 검색창 -->
+    <div class="search-box">
+        <input id="searchInput" type="text" placeholder="환경 키워드 입력 (예: 바다, 기후, 오염)" onkeyup="searchMovies()">
+    </div>
+
+    <!-- 키워드 버튼 -->
+    <div class="keywords">
+        <button class="keyword-btn" onclick="setKeyword('기후')">기후</button>
+        <button class="keyword-btn" onclick="setKeyword('바다')">바다</button>
+        <button class="keyword-btn" onclick="setKeyword('오염')">오염</button>
+        <button class="keyword-btn" onclick="setKeyword('동물')">동물</button>
+        <button class="keyword-btn" onclick="setKeyword('생태')">숲·생태</button>
+        <button class="keyword-btn" onclick="setKeyword('탄소')">탄소</button>
+        <button class="keyword-btn" onclick="setKeyword('쓰레기')">쓰레기</button>
+    </div>
+</header>
+
+<div class="movie-container" id="movieContainer"></div>
+
+<script>
+    /* -----------------------------
+       🎬 환경 영화 60편 데이터
+    ------------------------------ */
+    const movies = [
+        {title: "월-E", year: 2008, keywords: "환경 쓰레기 오염", desc: "쓰레기로 뒤덮인 지구에 남겨진 로봇 이야기."},
+        {title: "씨스피라시", year: 2021, keywords: "바다 해양 플라스틱", desc: "해양 파괴 현실을 고발한 다큐."},
+        {title: "빙하를 찾아서", year: 2012, keywords: "빙하 기후 온난화", desc: "얼음이 실제로 녹는 과정을 기록."},
+        {title: "불편한 진실", year: 2006, keywords: "기후 탄소 지구온난화", desc: "알고도 외면한 기후 위기."},
+        {title: "아바타", year: 2009, keywords: "생태 숲 자연 파괴", desc: "자연 파괴와 공동체 이야기."},
+        {title: "돈 룩 업", year: 2021, keywords: "기후 위기 풍자 과학", desc: "기후 위기 부정에 대한 풍자."},
+        {title: "카우스피라시", year: 2014, keywords: "축산 탄소 환경 파괴", desc: "축산업이 기후에 미치는 영향 분석."},
+        {title: "코브", year: 2009, keywords: "바다 돌고래 동물 해양", desc: "돌고래 사냥 실태 고발."},
+        {title: "플라스틱 바다", year: 2016, keywords: "바다 오염 플라스틱", desc: "플라스틱이 해양에 미치는 충격."},
+        {title: "내일", year: 2015, keywords: "환경 생태 해결 대안", desc: "지구 문제 해결 사례 모음."},
+
+        /* 📌 여기서부터 50편 추가 */
+        {title: "인터스텔라", year: 2014, keywords: "기후 먼지 농업 붕괴", desc: "지구 환경 붕괴 이후의 생존."},
+        {title: "노아", year: 2014, keywords: "홍수 환경 자연 파괴", desc: "자연 재앙과 인간의 선택."},
+        {title: "아워 플래닛", year: 2019, keywords: "자연 동물 생태", desc: "넷플릭스 자연 생태 다큐."},
+        {title: "레싱 익스팅션", year: 2015, keywords: "멸종 동물 기후", desc: "멸종 위기 생물 기록."},
+        {title: "블루 플래닛 2", year: 2017, keywords: "바다 해양 생태", desc: "심해 생태계와 인간 영향."},
+        {title: "홈", year: 2009, keywords: "지구 환경 생태 인간", desc: "항공 촬영으로 본 지구 보고서."},
+        {title: "비포 더 플러드", year: 2016, keywords: "기후 온난화 탄소", desc: "레오나르도 디카프리오 제작."},
+        {title: "체인지", year: 2018, keywords: "패션 환경 오염", desc: "패션 산업의 환경 문제."},
+        {title: "가디언즈 오브 라이프", year: 2020, keywords: "기후 산불 생태", desc: "기후 위기를 비유한 단편."},
+        {title: "미션 블루", year: 2014, keywords: "해양 바다 보호", desc: "해양 보호 운동가의 이야기."},
+
+        {title: "더 트루 코스트", year: 2015, keywords: "패션 오염 노동 환경", desc: "패스트 패션의 숨은 비용."},
+        {title: "라이징", year: 2018, keywords: "기후 바다 상승", desc: "해수면 상승 다큐."},
+        {title: "아쿠아맨", year: 2018, keywords: "바다 오염 해양", desc: "오염된 바다 도시의 모습."},
+        {title: "그래서 우리는 바다로 갔다", year: 2010, keywords: "바다 플라스틱 생태", desc: "해양 쓰레기 문제 탐사."},
+        {title: "유전자 혁명", year: 2017, keywords: "생태 유전자 환경", desc: "유전자 조작과 생태계 영향."},
+        {title: "파괴된 도시", year: 2019, keywords: "환경 오염 도시 붕괴", desc: "환경 재난 이후 도시 상황."},
+        {title: "마더 네이처", year: 2015, keywords: "자연 생태 숲", desc: "자연과 인간 관계 탐구."},
+        {title: "아이스 온 파이어", year: 2019, keywords: "빙하 기후 탄소", desc: "지구 온난화 해결책 탐색."},
+        {title: "더 11th 아워", year: 2007, keywords: "환경 위기 기후", desc: "환경 전문 다큐멘터리."},
+        {title: "세상의 끝까지", year: 2014, keywords: "자연 재해 환경", desc: "환경 재난 이야기."},
+
+        {title: "늑대와 춤을", year: 1990, keywords: "자연 동물 생태", desc: "자연과 조화롭게 사는 삶."},
+        {title: "모아나", year: 2016, keywords: "바다 자연 생태", desc: "바다와 함께 살아가는 문화."},
+        {title: "공기 살인", year: 2022, keywords: "미세먼지 공기 오염", desc: "공기 오염 실화 기반 영화."},
+        {title: "이리나: 북극의 여왕", year: 2020, keywords: "북극 동물 기후", desc: "기후 변화로 고통받는 북극곰."},
+        {title: "기후 전쟁", year: 2010, keywords: "기후 자원 분쟁", desc: "환경 문제로 인한 갈등."},
+        {title: "언더워터", year: 2020, keywords: "해양 심해 오염", desc: "심해 자원 채굴의 위험."},
+        {title: "테라", year: 2019, keywords: "지구 생태 환경", desc: "지구 생태 보고서."},
+        {title: "레이싱 익스팅션", year: 2015, keywords: "동물 멸종 환경", desc: "지구 생명체의 위기."},
+        {title: "아워 워터", year: 2020, keywords: "물 오염 환경", desc: "물 부족·오염 문제."},
+        {title: "디파이언트", year: 2017, keywords: "환경 운동 생태", desc: "환경 운동가 다큐."},
+
+        {title: "산호초를 구하라", year: 2017, keywords: "바다 산호 생태", desc: "지구 산호가 죽어가는 이유."},
+        {title: "에레버스", year: 2018, keywords: "북극 기후 눈", desc: "기후 변화로 녹는 빙하."},
+        {title: "랜드", year: 2021, keywords: "자연 숲 생태", desc: "자연 속에서의 삶과 회복."},
+        {title: "포레스트", year: 2019, keywords: "숲 나무 생태", desc: "숲 생태계의 중요성."},
+        {title: "블러드 라이언", year: 2015, keywords: "동물 밀렵 환경", desc: "사자 밀렵 실태."},
+        {title: "킹 코브라", year: 2016, keywords: "동물 생태", desc: "야생 동물 생태계 이야기."},
+        {title: "그린 플래닛", year: 2022, keywords: "식물 생태 숲", desc: "식물 중심 생태 다큐."},
+        {title: "블랙 피쉬", year: 2013, keywords: "동물 바다 생태", desc: "범고래 사육의 문제점."},
+        {title: "헌팅 그라운드", year: 2019, keywords: "환경 오염 피해", desc: "환경 오염 피해자 이야기."},
+        {title: "라스트 트리", year: 2020, keywords: "숲 나무 생태 파괴", desc: "숲 파괴 현장 기록."}
+    ];
+
+    /* -----------------------------
+       🔍 검색 함수
+    ------------------------------ */
+    function searchMovies() {
+        const keyword = document.getElementById("searchInput").value.toLowerCase();
+        const container = document.getElementById("movieContainer");
+
+        container.innerHTML = "";
+
+        const filtered = movies.filter(movie =>
+            movie.title.toLowerCase().includes(keyword) ||
+            movie.keywords.toLowerCase().includes(keyword)
+        );
+
+        if (filtered.length === 0) {
+            container.innerHTML = `<div class="no-result">검색 결과가 없습니다.</div>`;
+            return;
+        }
+
+        filtered.forEach(movie => {
+            container.innerHTML += `
+                <div class="movie">
+                    <div class="title">${movie.title}</div>
+                    <div class="year">${movie.year}</div>
+                    <div class="desc">${movie.desc}</div>
+                </div>
+            `;
+        });
+    }
+
+    /* -----------------------------
+       🏷 버튼 클릭 시 검색 자동 입력
+    ------------------------------ */
+    function setKeyword(word) {
+        document.getElementById("searchInput").value = word;
+        searchMovies();
+    }
+
+    // 페이지 로딩 시 전체 출력
+    searchMovies();
+</script>
+
+</body>
+</html>
